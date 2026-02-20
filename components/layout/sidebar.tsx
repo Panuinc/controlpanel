@@ -10,11 +10,15 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeft,
+  Rocket,
+  Globe,
 } from 'lucide-react';
 import { useState } from 'react';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/projects', label: 'Projects', icon: Rocket },
+  { href: '/sites', label: 'Sites', icon: Globe },
   { href: '/files', label: 'Files', icon: FolderOpen },
   { href: '/services', label: 'Services', icon: Server },
   { href: '/terminal', label: 'Terminal', icon: Terminal },
