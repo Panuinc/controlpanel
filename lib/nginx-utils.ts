@@ -155,21 +155,43 @@ export async function getNginxLogs(site: string, logType: 'access' | 'error', li
   return execPromise('tail', ['-n', String(safeLines), logFile]);
 }
 
+// --- SSL Detection ---
+
+async function findSSLCerts(domain: string): Promise<{ cert: string; key: string } | null> {
+  const possiblePaths = [
+    { cert: `/etc/letsencrypt/live/${domain}/fullchain.pem`, key: `/etc/letsencrypt/live/${domain}/privkey.pem` },
+  ];
+
+  for (const p of possiblePaths) {
+    try {
+      await fs.access(p.cert);
+      await fs.access(p.key);
+      return p;
+    } catch { /* not found */ }
+  }
+  return null;
+}
+
 // --- Config Generation ---
 
-export function generateNginxConfig(options: {
+export async function generateNginxConfig(options: {
   domain: string;
   type: NginxSiteType;
   port?: number;
   rootPath?: string;
   projectName?: string;
-}): string {
+}): Promise<string> {
   const { domain, type, port, rootPath } = options;
+
+  // Auto-detect SSL certs
+  const ssl = await findSSLCerts(domain);
+  const listenLines = ssl
+    ? `listen 80;\n    listen 443 ssl;\n    server_name ${domain};\n\n    ssl_certificate ${ssl.cert};\n    ssl_certificate_key ${ssl.key};`
+    : `listen 80;\n    server_name ${domain};`;
 
   if (type === 'proxy' && port) {
     return `server {
-    listen 80;
-    server_name ${domain};
+    ${listenLines}
 
     location / {
         proxy_pass http://127.0.0.1:${port};
@@ -189,13 +211,12 @@ export function generateNginxConfig(options: {
   if (type === 'static') {
     const root = rootPath || `/var/www/${domain}`;
     return `server {
-    listen 80;
-    server_name ${domain};
+    ${listenLines}
     root ${root};
     index index.html index.htm;
 
     location / {
-        try_files $uri $uri/ /index.html;
+        try_files $uri /index.html;
     }
 }
 `;
@@ -204,8 +225,7 @@ export function generateNginxConfig(options: {
   if (type === 'php') {
     const root = rootPath || `/var/www/${domain}`;
     return `server {
-    listen 80;
-    server_name ${domain};
+    ${listenLines}
     root ${root};
     index index.php index.html;
 
@@ -226,8 +246,7 @@ export function generateNginxConfig(options: {
   }
 
   return `server {
-    listen 80;
-    server_name ${domain};
+    ${listenLines}
 
     location / {
         return 200 'Site not configured';

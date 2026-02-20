@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
         if (project.domain) {
           const needsProxy = project.framework !== 'static' && project.framework !== 'php';
           const configName = project.domain;
-          const nginxConfig = generateNginxConfig({
+          const nginxConfig = await generateNginxConfig({
             domain: project.domain,
             type: needsProxy ? 'proxy' : project.framework === 'php' ? 'php' : 'static',
             port: needsProxy ? project.port : undefined,

@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Name, domain, and type are required' }, { status: 400 });
     }
 
-    const content = generateNginxConfig({
+    const content = await generateNginxConfig({
       domain,
       type,
       port: proxyPort,
