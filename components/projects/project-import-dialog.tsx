@@ -1,64 +1,60 @@
 'use client';
 
 import { useState } from 'react';
-import { X, GitBranch, Loader2, KeyRound } from 'lucide-react';
+import { X, FolderOpen, Loader2, KeyRound } from 'lucide-react';
 
 interface Props {
-  onCreated: () => void;
+  onImported: () => void;
   onClose: () => void;
 }
 
-export default function ProjectCreateDialog({ onCreated, onClose }: Props) {
-  const [gitUrl, setGitUrl] = useState('');
+export default function ProjectImportDialog({ onImported, onClose }: Props) {
+  const [projectPath, setProjectPath] = useState('');
   const [name, setName] = useState('');
-  const [targetDir, setTargetDir] = useState('/var/www');
   const [gitUsername, setGitUsername] = useState('');
   const [gitToken, setGitToken] = useState('');
   const [showCredentials, setShowCredentials] = useState(false);
-  const [creating, setCreating] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [cloneOutput, setCloneOutput] = useState('');
 
-  function autoName(url: string) {
-    const match = url.match(/\/([^\/]+?)(\.git)?$/);
-    if (match && !name) {
-      setName(match[1]);
+  function autoName(p: string) {
+    const parts = p.replace(/\/$/, '').split('/');
+    const last = parts[parts.length - 1];
+    if (last && !name) {
+      setName(last);
     }
   }
 
-  async function handleCreate() {
-    if (!gitUrl || !name) {
-      setError('Git URL and project name are required');
+  async function handleImport() {
+    if (!projectPath || !name) {
+      setError('Project path and name are required');
       return;
     }
 
-    setCreating(true);
+    setImporting(true);
     setError(null);
-    setCloneOutput('Cloning repository...');
 
     try {
-      const res = await fetch('/api/projects/create', {
+      const res = await fetch('/api/projects/import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gitUrl, name, targetDir, gitUsername: gitUsername || undefined, gitToken: gitToken || undefined }),
+        body: JSON.stringify({
+          path: projectPath,
+          name,
+          gitUsername: gitUsername || undefined,
+          gitToken: gitToken || undefined,
+        }),
       });
 
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to import');
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to create project');
-      }
-
-      setCloneOutput('Project created successfully!');
-      setTimeout(() => {
-        onCreated();
-        onClose();
-      }, 500);
+      onImported();
+      onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create project');
-      setCloneOutput('');
+      setError(err instanceof Error ? err.message : 'Failed to import project');
     } finally {
-      setCreating(false);
+      setImporting(false);
     }
   }
 
@@ -67,30 +63,27 @@ export default function ProjectCreateDialog({ onCreated, onClose }: Props) {
       <div className="w-full max-w-lg rounded-xl border border-white/10 bg-[#0f0f0f] shadow-2xl">
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
           <div className="flex items-center gap-2">
-            <GitBranch size={18} className="text-blue-400" />
-            <h2 className="text-sm font-semibold text-white">New Project</h2>
+            <FolderOpen size={18} className="text-emerald-400" />
+            <h2 className="text-sm font-semibold text-white">Import Existing Project</h2>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-md p-1 text-zinc-400 hover:bg-white/10 hover:text-white"
-          >
+          <button onClick={onClose} className="rounded-md p-1 text-zinc-400 hover:bg-white/10 hover:text-white">
             <X size={16} />
           </button>
         </div>
 
         <div className="space-y-4 p-5">
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-zinc-400">Git Repository URL</label>
+            <label className="mb-1.5 block text-xs font-medium text-zinc-400">Project Path on Server</label>
             <input
               type="text"
-              value={gitUrl}
+              value={projectPath}
               onChange={(e) => {
-                setGitUrl(e.target.value);
+                setProjectPath(e.target.value);
                 autoName(e.target.value);
               }}
-              placeholder="https://github.com/user/repo.git"
+              placeholder="/var/www/my-project"
               className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-zinc-500 outline-none focus:border-blue-500"
-              disabled={creating}
+              disabled={importing}
             />
           </div>
 
@@ -102,7 +95,7 @@ export default function ProjectCreateDialog({ onCreated, onClose }: Props) {
               onChange={(e) => setName(e.target.value)}
               placeholder="my-project"
               className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-zinc-500 outline-none focus:border-blue-500"
-              disabled={creating}
+              disabled={importing}
             />
           </div>
 
@@ -127,7 +120,6 @@ export default function ProjectCreateDialog({ onCreated, onClose }: Props) {
                   onChange={(e) => setGitUsername(e.target.value)}
                   placeholder="username"
                   className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-blue-500"
-                  disabled={creating}
                 />
               </div>
               <div>
@@ -138,31 +130,11 @@ export default function ProjectCreateDialog({ onCreated, onClose }: Props) {
                   onChange={(e) => setGitToken(e.target.value)}
                   placeholder="ghp_xxxxxxxxxxxx"
                   className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-zinc-600 outline-none focus:border-blue-500"
-                  disabled={creating}
                 />
+                <p className="mt-1 text-[10px] text-zinc-600">
+                  Token จะถูกเก็บไว้เพื่อใช้ตอน git pull ไม่ต้องกรอกซ้ำ
+                </p>
               </div>
-            </div>
-          )}
-
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-zinc-400">Target Directory</label>
-            <input
-              type="text"
-              value={targetDir}
-              onChange={(e) => setTargetDir(e.target.value)}
-              placeholder="/var/www"
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder-zinc-500 outline-none focus:border-blue-500"
-              disabled={creating}
-            />
-            <p className="mt-1 text-[11px] text-zinc-600">
-              Project will be cloned to {targetDir}/{name || 'project-name'}
-            </p>
-          </div>
-
-          {cloneOutput && (
-            <div className="rounded-lg bg-white/5 px-3 py-2 text-xs font-mono text-zinc-300">
-              {creating && <Loader2 size={12} className="mr-1.5 inline animate-spin" />}
-              {cloneOutput}
             </div>
           )}
 
@@ -176,17 +148,23 @@ export default function ProjectCreateDialog({ onCreated, onClose }: Props) {
         <div className="flex justify-end gap-2 border-t border-white/10 px-5 py-4">
           <button
             onClick={onClose}
-            disabled={creating}
+            disabled={importing}
             className="rounded-lg border border-white/10 px-4 py-2 text-sm text-zinc-400 hover:bg-white/5 hover:text-white disabled:opacity-50"
           >
             Cancel
           </button>
           <button
-            onClick={handleCreate}
-            disabled={creating || !gitUrl || !name}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+            onClick={handleImport}
+            disabled={importing || !projectPath || !name}
+            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm text-white hover:bg-emerald-700 disabled:opacity-50"
           >
-            {creating ? 'Cloning...' : 'Clone & Create'}
+            {importing ? (
+              <span className="flex items-center gap-1.5">
+                <Loader2 size={14} className="animate-spin" /> Importing...
+              </span>
+            ) : (
+              'Import Project'
+            )}
           </button>
         </div>
       </div>

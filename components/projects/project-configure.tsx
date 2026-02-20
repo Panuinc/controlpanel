@@ -18,6 +18,8 @@ export default function ProjectConfigure({ project, onSave, onClose }: Props) {
   const [buildCommand, setBuildCommand] = useState(project.buildCommand);
   const [startCommand, setStartCommand] = useState(project.startCommand);
   const [envVars, setEnvVars] = useState(project.envVars);
+  const [gitUsername, setGitUsername] = useState(project.gitUsername || '');
+  const [gitToken, setGitToken] = useState(project.gitToken || '');
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
@@ -31,6 +33,8 @@ export default function ProjectConfigure({ project, onSave, onClose }: Props) {
         buildCommand,
         startCommand,
         envVars,
+        gitUsername,
+        gitToken,
       });
       onClose();
     } catch {
@@ -116,6 +120,33 @@ export default function ProjectConfigure({ project, onSave, onClose }: Props) {
       <div>
         <label className="mb-1.5 block text-xs font-medium text-zinc-400">Environment Variables</label>
         <ProjectEnvEditor envVars={envVars} onChange={setEnvVars} />
+      </div>
+
+      <div className="border-t border-white/10 pt-4">
+        <label className="mb-3 block text-xs font-medium text-zinc-400">Git Credentials (for private repos)</label>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="mb-1 block text-[11px] text-zinc-500">Username</label>
+            <input
+              type="text"
+              value={gitUsername}
+              onChange={(e) => setGitUsername(e.target.value)}
+              placeholder="username"
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] text-zinc-500">Personal Access Token</label>
+            <input
+              type="password"
+              value={gitToken}
+              onChange={(e) => setGitToken(e.target.value)}
+              placeholder="ghp_xxxxxxxxxxxx"
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-zinc-500 outline-none focus:border-blue-500"
+            />
+          </div>
+        </div>
+        <p className="mt-1.5 text-[10px] text-zinc-600">เก็บ credentials ไว้ใช้ตอน git pull อัตโนมัติ ไม่ต้องกรอกทุกครั้ง</p>
       </div>
 
       <div className="flex justify-end gap-2 border-t border-white/10 pt-4">

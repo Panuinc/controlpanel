@@ -28,6 +28,8 @@ export async function POST(req: NextRequest) {
     if (body.startCommand !== undefined) updates.startCommand = body.startCommand;
     if (body.envVars !== undefined) updates.envVars = body.envVars;
     if (body.sslEnabled !== undefined) updates.sslEnabled = body.sslEnabled;
+    if (body.gitUsername !== undefined) updates.gitUsername = body.gitUsername;
+    if (body.gitToken !== undefined) updates.gitToken = body.gitToken;
 
     const updated = await updateProject(body.id, updates);
     return NextResponse.json({ project: updated });

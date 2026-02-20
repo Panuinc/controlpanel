@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
         await updateProject(id, { status: 'building', errorMessage: '' });
 
         const previousCommit = project.currentCommit;
-        const pullOutput = await gitPull(project.path);
+        const pullOutput = await gitPull(project.path, project.gitUsername, project.gitToken);
 
         const buildResult = await runBuild(project);
         await saveBuildLog(id, pullOutput + '\n' + buildResult.output);

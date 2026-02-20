@@ -10,6 +10,8 @@ export interface ProjectConfig {
   id: string;
   name: string;
   gitUrl: string;
+  gitUsername: string;
+  gitToken: string;
   path: string;
   domain: string;
   framework: FrameworkType;
@@ -47,6 +49,15 @@ export interface ProjectConfigureRequest {
   startCommand?: string;
   envVars?: ProjectEnvVar[];
   sslEnabled?: boolean;
+  gitUsername?: string;
+  gitToken?: string;
+}
+
+export interface ProjectImportRequest {
+  path: string;
+  name: string;
+  gitUsername?: string;
+  gitToken?: string;
 }
 
 export type ProjectAction = 'deploy' | 'start' | 'stop' | 'restart' | 'update' | 'delete' | 'rollback';

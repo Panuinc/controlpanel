@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import type { ProjectConfig, ProjectStatus } from '@/types/projects';
 import ProjectCard from './project-card';
 import ProjectCreateDialog from './project-create-dialog';
+import ProjectImportDialog from './project-import-dialog';
 import ProjectDetail from './project-detail';
-import { Plus, RefreshCw, Search } from 'lucide-react';
+import { Plus, FolderOpen, RefreshCw, Search } from 'lucide-react';
 
 type Filter = 'all' | ProjectStatus;
 
@@ -16,6 +17,7 @@ export default function ProjectList() {
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
   const [showCreate, setShowCreate] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
 
   const fetchProjects = useCallback(async () => {
@@ -112,11 +114,18 @@ export default function ProjectList() {
             <RefreshCw size={16} />
           </button>
           <button
+            onClick={() => setShowImport(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-zinc-400 hover:text-white"
+          >
+            <FolderOpen size={16} />
+            <span className="hidden sm:inline">Import</span>
+          </button>
+          <button
             onClick={() => setShowCreate(true)}
             className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700"
           >
             <Plus size={16} />
-            <span className="hidden sm:inline">New Project</span>
+            <span className="hidden sm:inline">Clone</span>
           </button>
         </div>
       </div>
@@ -169,6 +178,13 @@ export default function ProjectList() {
         <ProjectCreateDialog
           onCreated={fetchProjects}
           onClose={() => setShowCreate(false)}
+        />
+      )}
+
+      {showImport && (
+        <ProjectImportDialog
+          onImported={fetchProjects}
+          onClose={() => setShowImport(false)}
         />
       )}
     </div>

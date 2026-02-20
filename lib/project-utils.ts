@@ -136,14 +136,62 @@ export async function getBuildLogs(projectId: string): Promise<string> {
   }
 }
 
-// --- Git Operations ---
+// --- Git Credentials ---
 
-export async function gitClone(url: string, targetPath: string): Promise<string> {
-  validateGitUrl(url);
-  return execPromise(GIT_PATH, ['clone', url, targetPath], { timeout: 120000 });
+function buildAuthUrl(url: string, username: string, token: string): string {
+  // Convert https://github.com/user/repo.git to https://username:token@github.com/user/repo.git
+  try {
+    const parsed = new URL(url);
+    parsed.username = encodeURIComponent(username);
+    parsed.password = encodeURIComponent(token);
+    return parsed.toString();
+  } catch {
+    return url;
+  }
 }
 
-export async function gitPull(projectPath: string): Promise<string> {
+export async function gitSetCredentials(projectPath: string, username: string, token: string): Promise<void> {
+  if (!username || !token) return;
+
+  // Get current remote URL
+  const remoteUrl = (await execPromise(GIT_PATH, ['remote', 'get-url', 'origin'], { cwd: projectPath })).trim();
+
+  // Only update HTTPS URLs
+  if (remoteUrl.startsWith('http')) {
+    const authUrl = buildAuthUrl(remoteUrl, username, token);
+    await execPromise(GIT_PATH, ['remote', 'set-url', 'origin', authUrl], { cwd: projectPath });
+  }
+}
+
+export async function gitGetRemoteUrl(projectPath: string): Promise<string> {
+  try {
+    const url = (await execPromise(GIT_PATH, ['remote', 'get-url', 'origin'], { cwd: projectPath })).trim();
+    // Strip credentials from URL for display
+    try {
+      const parsed = new URL(url);
+      parsed.username = '';
+      parsed.password = '';
+      return parsed.toString();
+    } catch {
+      return url;
+    }
+  } catch {
+    return '';
+  }
+}
+
+// --- Git Operations ---
+
+export async function gitClone(url: string, targetPath: string, username?: string, token?: string): Promise<string> {
+  validateGitUrl(url);
+  const cloneUrl = username && token ? buildAuthUrl(url, username, token) : url;
+  return execPromise(GIT_PATH, ['clone', cloneUrl, targetPath], { timeout: 120000 });
+}
+
+export async function gitPull(projectPath: string, username?: string, token?: string): Promise<string> {
+  if (username && token) {
+    await gitSetCredentials(projectPath, username, token);
+  }
   return execPromise(GIT_PATH, ['pull'], { cwd: projectPath, timeout: 60000 });
 }
 
