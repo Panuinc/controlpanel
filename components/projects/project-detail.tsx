@@ -72,11 +72,15 @@ export default function ProjectDetail({ projectId, onBack, onAction }: Props) {
   }
 
   async function handleConfigure(updates: Record<string, unknown>) {
-    await fetch('/api/projects/configure', {
+    const res = await fetch('/api/projects/configure', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: projectId, ...updates }),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ error: 'Failed to save' }));
+      throw new Error(data.error || 'Failed to save configuration');
+    }
     fetchProject();
   }
 
