@@ -192,6 +192,15 @@ export async function gitPull(projectPath: string, username?: string, token?: st
   if (username && token) {
     await gitSetCredentials(projectPath, username, token);
   }
+  // Ensure we're on a branch (not detached HEAD from rollback)
+  const branch = await execPromise(GIT_PATH, ['branch', '--show-current'], { cwd: projectPath }).then(b => b.trim());
+  if (!branch) {
+    // Detached HEAD - checkout default branch first
+    const defaultBranch = await execPromise(GIT_PATH, ['rev-parse', '--abbrev-ref', 'origin/HEAD'], { cwd: projectPath })
+      .then(b => b.trim().replace('origin/', ''))
+      .catch(() => 'main');
+    await execPromise(GIT_PATH, ['checkout', defaultBranch], { cwd: projectPath });
+  }
   return execPromise(GIT_PATH, ['pull'], { cwd: projectPath, timeout: 60000 });
 }
 

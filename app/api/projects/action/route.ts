@@ -138,7 +138,14 @@ export async function POST(req: NextRequest) {
         await updateProject(id, { status: 'building', errorMessage: '' });
 
         const previousCommit = project.currentCommit;
-        const pullOutput = await gitPull(project.path, project.gitUsername, project.gitToken);
+        let pullOutput: string;
+        try {
+          pullOutput = await gitPull(project.path, project.gitUsername, project.gitToken);
+        } catch (pullErr) {
+          const msg = pullErr instanceof Error ? pullErr.message : String(pullErr);
+          await updateProject(id, { status: 'error', errorMessage: `Git pull failed: ${msg}` });
+          return NextResponse.json({ success: false, error: 'Git pull failed', output: msg });
+        }
 
         const buildResult = await runBuild(project);
         await saveBuildLog(id, pullOutput + '\n' + buildResult.output);
