@@ -108,6 +108,8 @@ export default function ProjectDetail({ projectId, onBack, onAction }: Props) {
 
   const isRunning = project.status === 'running';
   const isBuilding = project.status === 'building' || project.status === 'deploying';
+  const isStatic = project.framework === 'static' || project.framework === 'php';
+  const hasPM2 = !isStatic && !!project.startCommand;
 
   return (
     <div className="space-y-4">
@@ -137,7 +139,7 @@ export default function ProjectDetail({ projectId, onBack, onAction }: Props) {
               Deploy
             </button>
           )}
-          {isRunning && (
+          {isRunning && hasPM2 && (
             <>
               <button onClick={() => handleAction('stop')} disabled={acting}
                 className="rounded-lg border border-white/10 bg-white/5 p-2 text-zinc-400 hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50">

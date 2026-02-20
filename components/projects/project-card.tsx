@@ -65,6 +65,8 @@ export default function ProjectCard({ project, onAction, onClick }: Props) {
 
   const isRunning = project.status === 'running';
   const isBuilding = project.status === 'building' || project.status === 'deploying';
+  const isStatic = project.framework === 'static' || project.framework === 'php';
+  const hasPM2 = !isStatic && !!project.startCommand;
 
   return (
     <div
@@ -126,7 +128,7 @@ export default function ProjectCard({ project, onAction, onClick }: Props) {
             <span>Deploy</span>
           </button>
         )}
-        {!isRunning && !isBuilding && project.lastDeployedAt && (
+        {!isRunning && !isBuilding && project.lastDeployedAt && hasPM2 && (
           <button
             onClick={(e) => handleAction(e, 'start')}
             disabled={acting}
@@ -136,7 +138,7 @@ export default function ProjectCard({ project, onAction, onClick }: Props) {
             <Play size={12} />
           </button>
         )}
-        {isRunning && (
+        {isRunning && hasPM2 && (
           <>
             <button
               onClick={(e) => handleAction(e, 'stop')}
