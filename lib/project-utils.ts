@@ -371,10 +371,57 @@ export async function findAvailablePort(startPort: number = DEFAULT_APP_PORT_STA
   throw new ProjectError('No available ports found');
 }
 
+// --- Env File Parsing ---
+
+function parseEnvFile(content: string): Record<string, string> {
+  const env: Record<string, string> = {};
+  for (const line of content.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eqIndex = trimmed.indexOf('=');
+    if (eqIndex === -1) continue;
+    const key = trimmed.slice(0, eqIndex).trim();
+    let value = trimmed.slice(eqIndex + 1).trim();
+    // Strip surrounding quotes
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+    env[key] = value;
+  }
+  return env;
+}
+
+async function loadProjectEnv(project: ProjectConfig): Promise<Record<string, string>> {
+  const env: Record<string, string> = {};
+
+  // Load .env files (same priority as Next.js: .env < .env.local)
+  for (const envFile of ['.env', '.env.local']) {
+    try {
+      const content = await fs.readFile(path.join(project.path, envFile), 'utf-8');
+      Object.assign(env, parseEnvFile(content));
+    } catch { /* file doesn't exist */ }
+  }
+
+  // Project configured env vars take highest priority
+  for (const ev of project.envVars) {
+    env[ev.key] = ev.value;
+  }
+
+  // Always set PORT
+  if (project.port > 0) {
+    env.PORT = String(project.port);
+  }
+
+  return env;
+}
+
 // --- Build & Deploy ---
 
 export async function runBuild(project: ProjectConfig): Promise<{ success: boolean; output: string }> {
   let output = '';
+
+  // Load env vars from .env files + project config
+  const buildEnv = await loadProjectEnv(project);
 
   try {
     // Install dependencies
@@ -384,6 +431,7 @@ export async function runBuild(project: ProjectConfig): Promise<{ success: boole
       const installOut = await execPromise(installParts[0], installParts.slice(1), {
         cwd: project.path,
         timeout: 300000,
+        env: buildEnv,
       });
       output += installOut;
     }
@@ -395,6 +443,7 @@ export async function runBuild(project: ProjectConfig): Promise<{ success: boole
       const buildOut = await execPromise(buildParts[0], buildParts.slice(1), {
         cwd: project.path,
         timeout: 300000,
+        env: buildEnv,
       });
       output += buildOut;
     }
