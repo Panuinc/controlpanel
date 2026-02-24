@@ -201,6 +201,9 @@ export async function gitPull(projectPath: string, username?: string, token?: st
       .catch(() => 'main');
     await execPromise(GIT_PATH, ['checkout', defaultBranch], { cwd: projectPath });
   }
+  // Reset local changes (e.g. package-lock.json modified by npm install) before pulling
+  await execPromise(GIT_PATH, ['reset', '--hard', 'HEAD'], { cwd: projectPath });
+  await execPromise(GIT_PATH, ['clean', '-fd'], { cwd: projectPath });
   return execPromise(GIT_PATH, ['pull'], { cwd: projectPath, timeout: 60000 });
 }
 
