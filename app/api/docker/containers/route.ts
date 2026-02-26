@@ -14,7 +14,23 @@ export async function GET(req: NextRequest) {
       try {
         const stats = await getContainerStats();
         const statsMap = new Map(stats.map((s) => [s.id, s]));
-        const enriched = containers.map((c) => ({ ...c, stats: statsMap.get(c.id) || null }));
+        const enriched = containers.map((c) => {
+          const stat = statsMap.get(c.id);
+          if (!stat) return { ...c, stats: null };
+          const cpuPercent = parseFloat(String(stat.cpuPercent).replace('%', '')) || 0;
+          const memParts = String(stat.memUsage).split(' / ');
+          const netParts = String(stat.netIO).split(' / ');
+          return {
+            ...c,
+            stats: {
+              cpuPercent,
+              memoryUsage: memParts[0] || '0B',
+              memoryLimit: memParts[1] || '0B',
+              networkIn: netParts[0] || '0B',
+              networkOut: netParts[1] || '0B',
+            },
+          };
+        });
         return NextResponse.json({ containers: enriched });
       } catch {
         return NextResponse.json({ containers });
