@@ -39,7 +39,7 @@ export async function getUFWStatus(): Promise<UFWStatus> {
 
     return { active, rules };
   } catch (err) {
-    if (err instanceof Error && err.message.includes('not found')) {
+    if (err instanceof Error && (err.message.includes('ENOENT') || err.message.includes('not found'))) {
       throw new FirewallError('UFW is not installed on this system.');
     }
     throw err;

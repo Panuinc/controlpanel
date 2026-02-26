@@ -60,8 +60,8 @@ export async function listCertificates(): Promise<SSLCertificate[]> {
 
     return certs;
   } catch (err) {
-    if (err instanceof Error && err.message.includes('not found')) {
-      throw new SSLError('Certbot is not installed on this system.');
+    if (err instanceof Error && (err.message.includes('ENOENT') || err.message.includes('not found'))) {
+      throw new SSLError('Certbot is not installed. Run: apt install -y certbot python3-certbot-nginx');
     }
     throw err;
   }

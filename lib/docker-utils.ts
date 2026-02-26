@@ -46,7 +46,7 @@ export async function listContainers(): Promise<Container[]> {
       };
     });
   } catch (err) {
-    if (err instanceof Error && err.message.includes('not found')) {
+    if (err instanceof Error && (err.message.includes('ENOENT') || err.message.includes('not found'))) {
       throw new DockerError('Docker is not installed on this system.');
     }
     throw err;
