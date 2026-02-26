@@ -16,5 +16,10 @@ export async function GET() {
     return NextResponse.json({ authenticated: false });
   }
 
-  return NextResponse.json({ authenticated: true, username: payload.username });
+  return NextResponse.json({
+    authenticated: true,
+    username: payload.username,
+    userId: payload.userId,
+    role: payload.role,
+  });
 }

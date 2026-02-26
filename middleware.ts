@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const PUBLIC_PATHS = ['/login', '/api/auth/login'];
+const PUBLIC_PATHS = ['/login', '/api/auth/login', '/api/webhook/incoming'];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -9,6 +9,10 @@ export async function middleware(req: NextRequest) {
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p)) || pathname.startsWith('/_next') || pathname.startsWith('/favicon')) {
     return NextResponse.next();
   }
+
+  // IP filtering (read from cookie-based config cache or edge-compatible check)
+  // Note: Full IP filtering is done in the API routes via lib/ip-filter-utils
+  // Middleware only handles basic path/auth checks for edge compatibility
 
   const token = req.cookies.get('auth-token')?.value;
 

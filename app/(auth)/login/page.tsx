@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import TwoFactorVerify from '@/components/auth/two-factor-verify';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -9,6 +10,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [show2FA, setShow2FA] = useState(false);
+  const [tempToken, setTempToken] = useState('');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,6 +28,9 @@ export default function LoginPage() {
 
       if (data.success) {
         router.push('/dashboard');
+      } else if (data.requires2FA) {
+        setTempToken(data.tempToken);
+        setShow2FA(true);
       } else {
         setError(data.error || 'Login failed');
       }
@@ -33,6 +39,22 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (show2FA) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
+        <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur">
+          <TwoFactorVerify
+            tempToken={tempToken}
+            username={username}
+            password={password}
+            onSuccess={() => router.push('/dashboard')}
+            onBack={() => setShow2FA(false)}
+          />
+        </div>
+      </div>
+    );
   }
 
   return (

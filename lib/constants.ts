@@ -16,3 +16,32 @@ export const GIT_PATH = process.env.GIT_PATH || 'git';
 // Nginx
 export const NGINX_SITES_AVAILABLE = '/etc/nginx/sites-available';
 export const NGINX_SITES_ENABLED = '/etc/nginx/sites-enabled';
+
+// Users
+export const USERS_DATA_FILE = 'users.json';
+
+// Audit
+export const AUDIT_LOG_FILE = 'audit.json';
+export const AUDIT_MAX_ENTRIES = 10000;
+
+// IP Filter
+export const IP_FILTER_FILE = 'ip-filter.json';
+
+// Database Connections
+export const DATABASE_CONNECTIONS_FILE = 'database-connections.json';
+
+// Webhooks
+export const WEBHOOKS_DATA_FILE = 'webhooks.json';
+export const WEBHOOK_DELIVERIES_FILE = 'webhook-deliveries.json';
+
+// Backups
+export const BACKUPS_DIR = 'backups';
+export const BACKUPS_INDEX_FILE = 'backups-index.json';
+export const BACKUP_MAX_COUNT = 10;
+
+// Notifications
+export const NOTIFICATIONS_CONFIG_FILE = 'notifications.json';
+export const NOTIFICATIONS_HISTORY_FILE = 'notification-history.json';
+
+// Dashboard
+export const DASHBOARD_CONFIG_FILE = 'dashboard-configs.json';
