@@ -159,16 +159,32 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ success: false, error: 'Build failed', output: buildResult.output });
         }
 
-        if (project.startCommand && project.framework !== 'static' && project.framework !== 'php') {
+        // Re-fetch project to get latest config (env vars, port, etc.)
+        const updatedProject = await getProject(id) ?? project;
+
+        if (updatedProject.startCommand && updatedProject.framework !== 'static' && updatedProject.framework !== 'php') {
           try {
-            await pm2Restart(project.pm2Name);
+            await pm2Delete(updatedProject.pm2Name).catch(() => {});
+            await pm2Start(updatedProject);
           } catch {
-            await pm2Start(project);
+            // ignore
           }
         }
 
-        if (project.domain) {
-          await reloadNginx().catch(() => {});
+        if (updatedProject.domain) {
+          const needsProxy = updatedProject.framework !== 'static' && updatedProject.framework !== 'php';
+          const configName = updatedProject.domain;
+          const nginxConfig = await generateNginxConfig({
+            domain: updatedProject.domain,
+            type: needsProxy ? 'proxy' : updatedProject.framework === 'php' ? 'php' : 'static',
+            port: needsProxy ? updatedProject.port : undefined,
+            rootPath: !needsProxy ? (updatedProject.buildCommand ? `${updatedProject.path}/dist` : updatedProject.path) : undefined,
+            projectName: updatedProject.name,
+          });
+          await writeNginxConfig(configName, nginxConfig);
+          await enableSite(configName);
+          await reloadNginx();
+          await updateProject(id, { nginxConfigPath: configName });
         }
 
         const newCommit = await gitGetCurrentCommit(project.path).catch(() => previousCommit);
