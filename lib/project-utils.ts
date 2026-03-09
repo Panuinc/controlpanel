@@ -451,6 +451,21 @@ export async function runBuild(project: ProjectConfig): Promise<{ success: boole
       output += buildOut;
     }
 
+    // Link Next.js standalone static files if standalone output exists
+    const standaloneDir = path.join(project.path, '.next', 'standalone');
+    try {
+      await fs.access(standaloneDir);
+      const staticSrc = path.join(project.path, '.next', 'static');
+      const staticDst = path.join(standaloneDir, '.next', 'static');
+      const publicSrc = path.join(project.path, 'public');
+      const publicDst = path.join(standaloneDir, 'public');
+      await fs.rm(staticDst, { recursive: true, force: true });
+      await fs.symlink(staticSrc, staticDst);
+      await fs.rm(publicDst, { recursive: true, force: true }).catch(() => {});
+      await fs.symlink(publicSrc, publicDst).catch(() => {});
+      output += '\n=== Linked standalone static files ===\n';
+    } catch { /* not a standalone build, skip */ }
+
     output += '\n=== Build completed successfully ===\n';
     return { success: true, output };
   } catch (err) {
